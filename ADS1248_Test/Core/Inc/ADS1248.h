@@ -48,7 +48,7 @@ typedef struct
 {
 	float __vref_voltage;
 	uint8_t __pga_value;
-	double __voltage_lsb;
+	float __voltage_lsb;
 } ADS1248_Init_t;
 typedef struct
 {
@@ -281,9 +281,9 @@ HAL_StatusTypeDef ADS1248_Set_FullScale_Calib(ADS1248_Handle_t *hads, uint32_t *
 #endif
 
 #if USE_CONFIG_ADS1248_ADD_OFFSET_VALUES_MANUALLY
-HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset(ADS1248_Handle_t *hads,int32_t *pData32,double *pDataD);
+HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset(ADS1248_Handle_t *hads,int32_t *pData32,float *pData);
 #else
-HAL_StatusTypeDef ADS1248_Get_Voltage_V(ADS1248_Handle_t *hads,double *pDataD);
+HAL_StatusTypeDef ADS1248_Get_Voltage_V(ADS1248_Handle_t *hads,float *pData);
 #endif
 
 void ADS1248_Init(ADS1248_Handle_t *hads);
@@ -309,9 +309,6 @@ HAL_StatusTypeDef ADS1248_GPIO_Write(ADS1248_Handle_t *hads,uint8_t Ads1248_Pin,
 uint8_t ADS1248_GPIO_Read(ADS1248_Handle_t *hads,uint8_t Ads1248_Pin);
 HAL_StatusTypeDef ADS1248_Set_Self_Calib(ADS1248_Handle_t *hads);
 uint8_t ADS1248_Get_Clock_Status(ADS1248_Handle_t *hads);
-HAL_StatusTypeDef ADS1248_Get_Temp_C(ADS1248_Handle_t *hads,double *pDataD);
-
-
-HAL_StatusTypeDef ADS1248_WriteReg_3(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint32_t *pData32);
+HAL_StatusTypeDef ADS1248_Get_Temp_C(ADS1248_Handle_t *hads,float *pData);
 
 #endif /* INC_ADS1248_H_ */

@@ -10,38 +10,15 @@
 #if !USE_CONFIG_ADS1248_SET_CALIB_VALUES_AUTOMATICALLY
 static HAL_StatusTypeDef ADS1248_WriteReg_3(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint32_t *pData32);
 #endif
-HAL_StatusTypeDef ADS1248_WriteReg_Once(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint8_t Data);
+static HAL_StatusTypeDef ADS1248_WriteReg_Once(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint8_t Data);
 static uint32_t __ADS1248_Calc_Calib_Delay(ADS1248_Handle_t *hads);
 
-HAL_StatusTypeDef ADS1248_WriteReg_3(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint32_t *pData32)
-{
-	uint8_t tx[5];
-	HAL_StatusTypeDef status;
-
-	tx[0] = __ADS1248_CMD_WREG(Ads1248_Reg);
-	tx[1] = __ADS1248_CMD_W_R_REG_COUNT(3U);
-	tx[2] = (uint8_t)(*pData32>>16);
-	tx[3] = (uint8_t)(*pData32>>8);
-	tx[4] = (uint8_t)(*pData32);
-
-	hads->CS_Port->BSRR = hads->CS_Pin << 16U;
-	delay_us(1);
-	status = HAL_SPI_Transmit(hads->hspi, tx, 5U, ADS1248_SPI_DELAY);
-	delay_us(3);
-	hads->CS_Port->BSRR = hads->CS_Pin;
-	if(status != HAL_OK)
-	{
-		return status;
-	}
-
-	return status;
-}
 // setting values for voltage calculation ADS1248_Get_Data
 void ADS1248_Init(ADS1248_Handle_t *hads)
 {
 	hads->Init.__pga_value = 1U;
 	hads->Init.__vref_voltage = 2.048f;
-	hads->Init.__voltage_lsb = (double) ((hads->Init.__vref_voltage/(hads->Init.__pga_value) / 0x7FFFFFU));
+	hads->Init.__voltage_lsb = (float) ((hads->Init.__vref_voltage/(hads->Init.__pga_value) / 0x7FFFFFU));
 }
 // used to caolulate the LSB Value for converting the raw 24bit data into voltage value
 HAL_StatusTypeDef ADS1248_Set_Vltg_Calc_LSB(ADS1248_Handle_t *hads,float ads1248_vref_vltg)
@@ -89,7 +66,7 @@ HAL_StatusTypeDef ADS1248_Set_Vltg_Calc_LSB(ADS1248_Handle_t *hads,float ads1248
 
 	hads->Init.__vref_voltage = ads1248_vref_vltg;
 
-	hads->Init.__voltage_lsb = (double) ((hads->Init.__vref_voltage/(hads->Init.__pga_value) / 0x7FFFFF));
+	hads->Init.__voltage_lsb = (float) ((hads->Init.__vref_voltage/(hads->Init.__pga_value) / 0x7FFFFF));
 
 	return status;
 }
@@ -121,7 +98,7 @@ HAL_StatusTypeDef ADS1248_Trigger_Start_Pin(ADS1248_Handle_t *hads)
 	return HAL_OK;
 }
 
-HAL_StatusTypeDef ADS1248_WriteReg_Once(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint8_t Data)
+static HAL_StatusTypeDef ADS1248_WriteReg_Once(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint8_t Data)
 {
 	uint8_t tx[3];
 	HAL_StatusTypeDef status;
@@ -589,7 +566,7 @@ static uint32_t __ADS1248_Calc_Calib_Delay(ADS1248_Handle_t *hads)
 }
 #if USE_CONFIG_ADS1248_ADD_OFFSET_VALUES_MANUALLY
 // use this function if u manually need to add offset to the 24Bit ADC Values
-HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset(ADS1248_Handle_t *hads,int32_t *pData32,double *pDataD)
+HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset(ADS1248_Handle_t *hads,int32_t *pData32,float *pData)
 {
 	uint8_t tx[3] = {ADS1248_CMD_NOP,ADS1248_CMD_NOP,ADS1248_CMD_NOP};
 	uint8_t rx[3];
@@ -611,12 +588,12 @@ HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset(ADS1248_Handle_t *hads,int32_
 	}
 	raw_data -= (*pData32);
 
-	*pDataD = (double)(raw_data * hads->Init.__voltage_lsb);
+	*pData = (float)(raw_data * hads->Init.__voltage_lsb);
 
 	return status;
 }
 #else
-HAL_StatusTypeDef ADS1248_Get_Voltage_V(ADS1248_Handle_t *hads,double *pDataD)
+HAL_StatusTypeDef ADS1248_Get_Voltage_V(ADS1248_Handle_t *hads,float *pData)
 {
 	uint8_t tx[3] = {ADS1248_CMD_NOP,ADS1248_CMD_NOP,ADS1248_CMD_NOP};
 	uint8_t rx[3];
@@ -637,7 +614,7 @@ HAL_StatusTypeDef ADS1248_Get_Voltage_V(ADS1248_Handle_t *hads,double *pDataD)
 		raw_data |= 0xFF000000;
 	}
 
-	*pDataD = (double)(raw_data * hads->Init.__voltage_lsb);
+	*pData = (float)(raw_data * hads->Init.__voltage_lsb);
 
 	return status;
 }
@@ -775,7 +752,7 @@ uint8_t ADS1248_Get_Clock_Status(ADS1248_Handle_t *hads)
 	}
 	return (reg & (__ADS1248_CLCKSTAT_MASK));
 }
-HAL_StatusTypeDef ADS1248_Get_Temp_C(ADS1248_Handle_t *hads,double *pDataD)
+HAL_StatusTypeDef ADS1248_Get_Temp_C(ADS1248_Handle_t *hads,float *pData)
 {
 	uint8_t tx[3] = {ADS1248_CMD_NOP,ADS1248_CMD_NOP,ADS1248_CMD_NOP};
 	uint8_t rx[3];
@@ -796,7 +773,7 @@ HAL_StatusTypeDef ADS1248_Get_Temp_C(ADS1248_Handle_t *hads,double *pDataD)
 		raw_data |= 0xFF000000;
 	}
 
-	*pDataD = (double)__ADS1248_TEMP_LSB(raw_data);
+	*pData = (float)__ADS1248_TEMP_LSB(raw_data);
 
 	return status;
 }
