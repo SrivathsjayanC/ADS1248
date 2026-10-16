@@ -117,7 +117,7 @@ int main(void)
   ads.START_Pin = start_Pin;
   ads.DRDY_Port = drdy_GPIO_Port;
   ads.DRDY_Pin = drdy_Pin;
-  double ddata;
+  float ddata;
   ADS1248_Init(&ads);
   ADS1248_Reset_Hard(&ads);
   HAL_Delay(16);
@@ -147,6 +147,9 @@ int main(void)
 		  ADS1248_Get_Voltage_V(&ads,&ddata);
 		  len = sprintf(c,"Data: %lf\r",ddata);
 		  HAL_UART_Transmit(&huart2,(uint8_t*)c,len, HAL_MAX_DELAY);
+//		  ADS1248_Get_Temp_C(&ads, &ddata);
+//		  len = sprintf(c,"Temp: %lf\r",ddata);
+//		  HAL_UART_Transmit(&huart2,(uint8_t*)c,len, HAL_MAX_DELAY);
 		  if(count == 5)
 		  {
 			  len = sprintf(c,"REF0 Selected 1.500V\r");
@@ -159,19 +162,31 @@ int main(void)
 			  ADS1248_Set_Vref_Source(&ads, ADS1248_REFSEL_REFP0_REFN0);
 			  ADS1248_Set_Vltg_Calc_LSB(&ads, ADS1248_VREF_VLTG_REF0);
 		  }
-//		  if(count == 10)
-//		  {
-//			  len = sprintf(c,"System Calib in 5Sec\r");
-//			  HAL_UART_Transmit(&huart2,(uint8_t*)c,len, HAL_MAX_DELAY);
-//			  HAL_Delay(5000);
-//			  ADS1248_Set_VBIAS(&ads, ADS1248_VBIAS_AIN0,ENABLE);
-//			  HAL_Delay(150);
-//			  ADS1248_Set_System_Offset_Calib(&ads);
-//			  HAL_Delay(150);
-//			  ADS1248_Set_VBIAS(&ads, ADS1248_VBIAS_AIN0,DISABLE);
-//			  len = sprintf(c,"System Calib Completed\r");
-//			  HAL_UART_Transmit(&huart2,(uint8_t*)c,len, HAL_MAX_DELAY);
-//		  }
+		  if(count == 10)
+		  {
+			  len = sprintf(c,"Self Calib in 2Sec\r");
+			  HAL_UART_Transmit(&huart2,(uint8_t*)c,len, HAL_MAX_DELAY);
+			  HAL_Delay(2000);
+			  ADS1248_Set_Self_Calib(&ads);
+			  len = sprintf(c,"Self Calib Completed\r");
+			  HAL_UART_Transmit(&huart2,(uint8_t*)c,len, HAL_MAX_DELAY);
+		  }
+		  if(count == 15)
+		  {
+			  len = sprintf(c,"System Calib in 5Sec\r");
+			  HAL_UART_Transmit(&huart2,(uint8_t*)c,len, HAL_MAX_DELAY);
+			  HAL_Delay(5000);
+			  ADS1248_Set_VBIAS(&ads, ADS1248_VBIAS_AIN0,ENABLE);
+			  HAL_Delay(150);
+			  ADS1248_Set_System_Offset_Calib(&ads);
+			  HAL_Delay(150);
+			  ADS1248_Set_VBIAS(&ads, ADS1248_VBIAS_AIN0,DISABLE);
+			  len = sprintf(c,"System Calib Completed\r");
+			  HAL_UART_Transmit(&huart2,(uint8_t*)c,len, HAL_MAX_DELAY);
+			  ADS1248_Set_Vref_State(&ads, ADS1248_VREFCON_INT_ALWAYS_ON);
+			  ADS1248_Set_Vref_Source(&ads, ADS1248_REFSEL_INT);
+			  ADS1248_Set_Vltg_Calc_LSB(&ads, ADS1248_VREF_VLTG_INT);
+		  }
 		  count++;
 	  }
   }
