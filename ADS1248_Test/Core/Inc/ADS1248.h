@@ -89,27 +89,22 @@ typedef enum {
 
 typedef struct
 {
-	float __vref_voltage;
+	float   __vref_voltage;
 	uint8_t __pga_value;
-	float __voltage_lsb;
+	float   __voltage_lsb;
 } ADS1248_Init_t;
 typedef struct
 {
-	SPI_HandleTypeDef *hspi;
-
-	GPIO_TypeDef *CS_Port;
-	uint16_t CS_Pin;
-
-	GPIO_TypeDef *RESET_Port;
-	uint16_t RESET_Pin;
-
-	GPIO_TypeDef *DRDY_Port;
-	uint16_t DRDY_Pin;
-
-	GPIO_TypeDef *START_Port;
-	uint16_t START_Pin;
-
-	ADS1248_Init_t Init;
+	SPI_HandleTypeDef * hspi;
+	GPIO_TypeDef      * CS_Port;
+	uint16_t            CS_Pin;
+	GPIO_TypeDef      * RESET_Port;
+	uint16_t            RESET_Pin;
+	GPIO_TypeDef      * DRDY_Port;
+	uint16_t            DRDY_Pin;
+	GPIO_TypeDef      * START_Port;
+	uint16_t            START_Pin;
+	ADS1248_Init_t      Init;
 
 } ADS1248_Handle_t;
 
@@ -201,7 +196,7 @@ typedef enum {
     ADS1248_REFSEL_REFP1_REFN1     = 0x01,  /*!< Selects the external reference connected to the REFP1 and REFN1 pins */
     ADS1248_REFSEL_INT             = 0x02,  /*!< Selects the internal voltage reference */
     ADS1248_REFSEL_INT_REFP0_REFN0 = 0x03   /*!< Selects the internal voltage reference and physically routes it out to the REFP0 and REFN0 pins */
-} Ads1248_Reference_Src_t;s1248_Reference_Src_t;
+} Ads1248_Reference_Src_t;
 
 /**
  * @brief  ADS1248 Programmable Gain Amplifier (PGA) Settings.
@@ -426,21 +421,25 @@ typedef enum
 #define __ADS1248_I1DIR_POS     4U
 #define __ADS1248_I2DIR_POS     0U
 
-#define __ADS1248_CLEAR_MUX_SP ~0x38U
-#define __ADS1248_CLEAR_MUX_NP ~0x07U
-#define __ADS1248_CLEAR_MUXCAL ~0x07U
-#define __ADS1248_CLEAR_REFSELT ~0x18U
-#define __ADS1248_CLEAR_PGA ~0x70U
-#define __ADS1248_CLEAR_DR ~0x0FU
-#define __ADS1248_CLEAR_IMAG ~0x07U
-#define __ADS1248_CLEAR_VREFCON ~0x60U
-#define __ADS1248_CLEAR_BSC ~0xC0U
-#define __ADS1248_CLEAR_DRDY ~0x08U
-#define __ADS1248_CLEAR_I1DIR ~0xF0U
-#define __ADS1248_CLEAR_I2DIR ~0x0FU
+#define __ADS1248_CLEAR_MUX_SP   ~0x38U
+#define __ADS1248_CLEAR_MUX_NP   ~0x07U
+#define __ADS1248_CLEAR_MUXCAL   ~0x07U
+#define __ADS1248_CLEAR_REFSELT  ~0x18U
+#define __ADS1248_CLEAR_PGA      ~0x70U
+#define __ADS1248_CLEAR_DR       ~0x0FU
+#define __ADS1248_CLEAR_IMAG     ~0x07U
+#define __ADS1248_CLEAR_VREFCON  ~0x60U
+#define __ADS1248_CLEAR_BSC      ~0xC0U
+#define __ADS1248_CLEAR_DRDY     ~0x08U
+#define __ADS1248_CLEAR_I1DIR    ~0xF0U
+#define __ADS1248_CLEAR_I2DIR    ~0x0FU
 
-#define __ADS1248_CLCKSTAT_MASK (1<<__ADS1248_CLKSTAT_POS)
-#define __ADS1248_TEMP_LSB(ADC_24)   (25U + ((((ADC_24*ADS1248_VREF_VLTG_INT)/8388608.0f) - 0.118f)/0.000405f))
+#define __ADS1248_CLCKSTAT_MASK (1 << __ADS1248_CLKSTAT_POS)
+#define __ADS1248_TEMP_LSB(ADC_24)   (25U + ((((ADC_24 * ADS1248_VREF_VLTG_INT)/8388608.0f) - 0.118f)/0.000405f))
+#define __ADS1248_VOLTAGE_LSB_DIVISOR 8388608.0f
+
+#define __ADS1248_PIN_MASK 0xFFU
+#define __IS_ADS1248_GPIO_PIN(PIN) ((PIN & __ADS1248_PIN_MASK) != 0x00U)
 
 /* System Commands */
 #define ADS1248_CMD_WAKEUP      0x00U  /* Exit sleep mode                     */
@@ -467,47 +466,44 @@ typedef enum
 #define __ADS1248_CMD_WREG(r) (uint8_t)(__ADS1248_CMD_WREG_BASE | r)
 #define __ADS1248_CMD_W_R_REG_COUNT(n) (uint8_t)(n-1U)
 
-#define __ADS1248_PIN_MASK 0xFFU
-
-#define __IS_ADS1248_GPIO_PIN(PIN) ((PIN & __ADS1248_PIN_MASK) != 0x00U)
 
 #if USE_CONFIG_ADS1248_SET_CALIB_VALUES_AUTOMATICALLY
-HAL_StatusTypeDef ADS1248_Set_System_Offset_Calib(ADS1248_Handle_t *hads);
-HAL_StatusTypeDef ADS1248_Set_Gain_Calib(ADS1248_Handle_t *hads);
+HAL_StatusTypeDef ADS1248_Set_System_Offset_Calib (ADS1248_Handle_t * hads);
+HAL_StatusTypeDef ADS1248_Set_Gain_Calib (ADS1248_Handle_t * hads);
 #else
-HAL_StatusTypeDef ADS1248_Set_Offset_Calib(ADS1248_Handle_t *hads, uint32_t *pData32);
-HAL_StatusTypeDef ADS1248_Set_FullScale_Calib(ADS1248_Handle_t *hads, uint32_t *pData32);
+HAL_StatusTypeDef ADS1248_Set_Offset_Calib (ADS1248_Handle_t * hads, uint32_t * p_Data32);
+HAL_StatusTypeDef ADS1248_Set_FullScale_Calib (ADS1248_Handle_t * hads, uint32_t * p_Data32);
 #endif
 
 #if USE_CONFIG_ADS1248_ADD_OFFSET_VALUES_MANUALLY
-HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset(ADS1248_Handle_t *hads,int32_t *pData32,float *pData);
+HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset (ADS1248_Handle_t * hads, int32_t * p_Data32, float * p_Data);
 #else
-HAL_StatusTypeDef ADS1248_Get_Voltage_V(ADS1248_Handle_t *hads,float *pData);
+HAL_StatusTypeDef ADS1248_Get_Voltage_V (ADS1248_Handle_t * hads, float * p_Data);
 #endif
 
-void ADS1248_Init(ADS1248_Handle_t *hads);
-HAL_StatusTypeDef ADS1248_Set_Vltg_Calc_LSB(ADS1248_Handle_t *hads,float vref_vltg);
-HAL_StatusTypeDef ADS1248_Reset_Hard(ADS1248_Handle_t *hads);
-HAL_StatusTypeDef ADS1248_Trigger_Start_Pin(ADS1248_Handle_t *hads);
-HAL_StatusTypeDef ADS1248_ReadReg_Once(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint8_t *pData);
-HAL_StatusTypeDef ADS1248_ReadReg_n(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint8_t n, uint8_t *pData);
-HAL_StatusTypeDef ADS1248_Command_Tx(ADS1248_Handle_t *hads, uint8_t Ads1248_Cmd);
-HAL_StatusTypeDef ADS1248_Set_Burnout_Current(ADS1248_Handle_t *hads,ADS1248_Burnout_Current Ads1248_Bsc);
-HAL_StatusTypeDef ADS1248_Set_Input_Channel(ADS1248_Handle_t *hads,Ads1248_Mux_PosInput_t Ads1248_Mux_Sp,Ads1248_Mux_NegInput_t Ads1248_Mux_Sn);
-HAL_StatusTypeDef ADS1248_Set_VBIAS(ADS1248_Handle_t *hads,uint8_t Ads1248_Vbias,uint8_t En_Di);
-HAL_StatusTypeDef ADS1248_Set_Vref_State(ADS1248_Handle_t *hads,ADS1248_Vref_State Ads1248_Vrefcon);
-HAL_StatusTypeDef ADS1248_Set_Vref_Source(ADS1248_Handle_t *hads,Ads1248_Reference_Src_t Ads1248_Refsel);
-HAL_StatusTypeDef ADS1248_Set_System_Monitor(ADS1248_Handle_t *hads,ADS1248_MuxCal_t Ads1248_MuxCal);
-HAL_StatusTypeDef ADS1248_Set_PGA(ADS1248_Handle_t *hads,ADS1248_GainPga_t Ads1248_Pga);
-HAL_StatusTypeDef ADS1248_Set_Data_Rate(ADS1248_Handle_t *hads,ADS1248_DataRate_t Ads1248_Datarate);
-HAL_StatusTypeDef ADS1248_Set_Drdy_Mode(ADS1248_Handle_t *hads, Ads1248_Drdy Ads1248_Drdy_Mode);
-HAL_StatusTypeDef ADS1248_Set_Exci_Current_Mag(ADS1248_Handle_t *hads,ADS1248_IdacMagnitude_t Ads1248_Idac0);
-HAL_StatusTypeDef ADS1248_Set_Exci_Current_Pin(ADS1248_Handle_t *hads,uint8_t Ads1248_idac,ADS1248_Exci_Pin_t Ads1248_Ex_Cur);
-HAL_StatusTypeDef ADS1248_Set_GPIO_Mode(ADS1248_Handle_t *hads,uint8_t Ads1248_Pin,uint8_t Ads1248_Ain_Mode);
-HAL_StatusTypeDef ADS1248_GPIO_Write(ADS1248_Handle_t *hads,uint8_t Ads1248_Pin,ADS1248_Gpio_Pin_State_t Ads1248_Gpio);
-uint8_t ADS1248_GPIO_Read(ADS1248_Handle_t *hads,uint8_t Ads1248_Pin);
-HAL_StatusTypeDef ADS1248_Set_Self_Calib(ADS1248_Handle_t *hads);
-uint8_t ADS1248_Get_Clock_Status(ADS1248_Handle_t *hads);
-HAL_StatusTypeDef ADS1248_Get_Temp_C(ADS1248_Handle_t *hads,float *pData);
+void ADS1248_Init (ADS1248_Handle_t * hads);
+HAL_StatusTypeDef ADS1248_Set_Vltg_Calc_LSB (ADS1248_Handle_t * hads, float vref_vltg);
+HAL_StatusTypeDef ADS1248_Reset_Hard (ADS1248_Handle_t * hads);
+HAL_StatusTypeDef ADS1248_Trigger_Start_Pin (ADS1248_Handle_t * hads);
+HAL_StatusTypeDef ADS1248_ReadReg_Once (ADS1248_Handle_t * hads, ADS1248_Reg_t Ads1248_Reg, uint8_t * p_Data);
+HAL_StatusTypeDef ADS1248_ReadReg_n (ADS1248_Handle_t * hads, ADS1248_Reg_t Ads1248_Reg, uint8_t n, uint8_t * p_Data);
+HAL_StatusTypeDef ADS1248_Command_Tx (ADS1248_Handle_t * hads, uint8_t Ads1248_Cmd);
+HAL_StatusTypeDef ADS1248_Set_Burnout_Current (ADS1248_Handle_t * hads, ADS1248_Burnout_Current Ads1248_Bsc);
+HAL_StatusTypeDef ADS1248_Set_Input_Channel (ADS1248_Handle_t * hads, Ads1248_Mux_PosInput_t Ads1248_Mux_Sp, Ads1248_Mux_NegInput_t Ads1248_Mux_Sn);
+HAL_StatusTypeDef ADS1248_Set_VBIAS (ADS1248_Handle_t * hads,uint8_t Ads1248_Vbias, uint8_t En_Di);
+HAL_StatusTypeDef ADS1248_Set_Vref_State (ADS1248_Handle_t * hads, ADS1248_Vref_State Ads1248_Vrefcon);
+HAL_StatusTypeDef ADS1248_Set_Vref_Source (ADS1248_Handle_t * hads, Ads1248_Reference_Src_t Ads1248_Refsel);
+HAL_StatusTypeDef ADS1248_Set_System_Monitor (ADS1248_Handle_t * hads, ADS1248_MuxCal_t Ads1248_MuxCal);
+HAL_StatusTypeDef ADS1248_Set_PGA (ADS1248_Handle_t * hads, ADS1248_GainPga_t Ads1248_Pga);
+HAL_StatusTypeDef ADS1248_Set_Data_Rate (ADS1248_Handle_t * hads, ADS1248_DataRate_t Ads1248_Datarate);
+HAL_StatusTypeDef ADS1248_Set_Drdy_Mode (ADS1248_Handle_t * hads, Ads1248_Drdy Ads1248_Drdy_Mode);
+HAL_StatusTypeDef ADS1248_Set_Exci_Current_Mag (ADS1248_Handle_t * hads, ADS1248_IdacMagnitude_t Ads1248_Idac0);
+HAL_StatusTypeDef ADS1248_Set_Exci_Current_Pin (ADS1248_Handle_t * hads, uint8_t Ads1248_idac, ADS1248_Exci_Pin_t Ads1248_Ex_Cur);
+HAL_StatusTypeDef ADS1248_Set_GPIO_Mode (ADS1248_Handle_t * hads, uint8_t Ads1248_Pin, uint8_t Ads1248_Ain_Mode);
+HAL_StatusTypeDef ADS1248_GPIO_Write (ADS1248_Handle_t * hads, uint8_t Ads1248_Pin, ADS1248_Gpio_Pin_State_t Ads1248_Gpio);
+uint8_t ADS1248_GPIO_Read (ADS1248_Handle_t * hads, uint8_t Ads1248_Pin);
+HAL_StatusTypeDef ADS1248_Set_Self_Calib (ADS1248_Handle_t * hads);
+uint8_t ADS1248_Get_Clock_Status (ADS1248_Handle_t * hads);
+HAL_StatusTypeDef ADS1248_Get_Temp_C (ADS1248_Handle_t * hads, float * p_Data);
 
 #endif /* INC_ADS1248_H_ */

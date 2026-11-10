@@ -8,10 +8,10 @@
 #include "delay_us.h"
 
 #if !USE_CONFIG_ADS1248_SET_CALIB_VALUES_AUTOMATICALLY
-static HAL_StatusTypeDef ADS1248_WriteReg_3(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint32_t *pData32);
+static HAL_StatusTypeDef ADS1248_WriteReg_3 (ADS1248_Handle_t * hads, ADS1248_Reg_t Ads1248_Reg, uint32_t * p_Data32);
 #endif
-static HAL_StatusTypeDef ADS1248_WriteReg_Once(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint8_t Data);
-static uint32_t __ADS1248_Calc_Calib_Delay(ADS1248_Handle_t *hads);
+static HAL_StatusTypeDef ADS1248_WriteReg_Once (ADS1248_Handle_t * hads, ADS1248_Reg_t Ads1248_Reg, uint8_t Data);
+static uint32_t __ADS1248_Calc_Calib_Delay (ADS1248_Handle_t * hads);
 
 /**
  * @brief  Initializes the ADS1248 handle parameters for voltage calculation.
@@ -20,18 +20,18 @@ static uint32_t __ADS1248_Calc_Calib_Delay(ADS1248_Handle_t *hads);
  *          readings into actual voltage measurements, specifically for use in the
  *          ADS1248_Get_Data function. It configures the internal PGA value to 1,
  *          sets the internal reference voltage to 2.048V, and pre-calculates the
- *          voltage LSB weight based on the maximum positive 24-bit range (0x7FFFFF).
+ *          voltage LSB weight based on the maximum positive 24-bit range (388608.0f).
  *
  * @param  hads Pointer to the ADS1248_Handle_t structure that contains the
  *              initialization and configuration parameters for the device.
  *
  * @retval None
  */
-void ADS1248_Init(ADS1248_Handle_t *hads)
+void ADS1248_Init (ADS1248_Handle_t * hads)
 {
 	hads->Init.__pga_value = 1U;
-	hads->Init.__vref_voltage = 2.048f;
-	hads->Init.__voltage_lsb = (float) ((hads->Init.__vref_voltage/(hads->Init.__pga_value) / 8388608.0f));
+	hads->Init.__vref_voltage = ADS1248_VREF_VLTG_INT;
+	hads->Init.__voltage_lsb = (float) ((hads->Init.__vref_voltage/(hads->Init.__pga_value)) / __ADS1248_VOLTAGE_LSB_DIVISOR);
 }
 /**
  * @brief  Calculates and sets the voltage LSB weight for converting raw 24-bit data into an actual voltage value.
@@ -41,7 +41,7 @@ void ADS1248_Init(ADS1248_Handle_t *hads)
  *          to dynamically determine the currently active Programmable Gain Amplifier (PGA)
  *          setting. Using the user-provided reference voltage and the retrieved PGA gain,
  *          it computes the voltage LSB weight using the maximum positive 24-bit code
- *          range (0x7FFFFF). The reference voltage, active PGA, and calculated LSB
+ *          range (388608.0f). The reference voltage, active PGA, and calculated LSB
  *          are then cached in the handle for future data conversions.
  *
  * @param  hads               Pointer to the ADS1248_Handle_t structure that contains the
@@ -54,9 +54,9 @@ void ADS1248_Init(ADS1248_Handle_t *hads)
  *         - HAL_ERROR:   A NULL handle was passed, the reference voltage was out of bounds,
  *                        an invalid PGA value was decoded, or an SPI communication error occurred.
  */
-HAL_StatusTypeDef ADS1248_Set_Vltg_Calc_LSB(ADS1248_Handle_t *hads,float ads1248_vref_vltg)
+HAL_StatusTypeDef ADS1248_Set_Vltg_Calc_LSB (ADS1248_Handle_t * hads, float ads1248_vref_vltg)
 {
-	if(hads == NULL || ads1248_vref_vltg < 0.5f || ads1248_vref_vltg > 4.25f)
+	if((hads == NULL) || (ads1248_vref_vltg < 0.5f) || (ads1248_vref_vltg > 4.25f))
 	{
 		return HAL_ERROR;
 	}
@@ -67,7 +67,7 @@ HAL_StatusTypeDef ADS1248_Set_Vltg_Calc_LSB(ADS1248_Handle_t *hads,float ads1248
 	{
 		return status;
 	}
-	switch((reg & (0x7<<__ADS1248_PGA_POS))>>__ADS1248_PGA_POS)
+	switch(reg & ((0x7 << __ADS1248_PGA_POS) >> __ADS1248_PGA_POS))
 	{
 		case ADS1248_PGA_1:
 			hads->Init.__pga_value = 1U;
@@ -99,7 +99,7 @@ HAL_StatusTypeDef ADS1248_Set_Vltg_Calc_LSB(ADS1248_Handle_t *hads,float ads1248
 
 	hads->Init.__vref_voltage = ads1248_vref_vltg;
 
-	hads->Init.__voltage_lsb = (float) ((hads->Init.__vref_voltage/(hads->Init.__pga_value) / 8388608.0f));
+	hads->Init.__voltage_lsb = (float) ((hads->Init.__vref_voltage/(hads->Init.__pga_value)) / __ADS1248_VOLTAGE_LSB_DIVISOR);
 
 	return status;
 }
@@ -121,13 +121,13 @@ HAL_StatusTypeDef ADS1248_Set_Vltg_Calc_LSB(ADS1248_Handle_t *hads,float ads1248
  *         - HAL_OK:    Hardware reset sequence was executed successfully.
  *         - HAL_ERROR: The RESET_Port pointer in the handle was NULL.
  */
-HAL_StatusTypeDef ADS1248_Reset_Hard(ADS1248_Handle_t *hads)
+HAL_StatusTypeDef ADS1248_Reset_Hard (ADS1248_Handle_t * hads)
 {
 	if(hads->RESET_Port == NULL)
 	{
 		return HAL_ERROR;
 	}
-	hads->RESET_Port->BSRR = hads->RESET_Pin << 16U;
+	hads->RESET_Port->BSRR = (hads->RESET_Pin << 16U);
 	HAL_Delay(2U);
 	hads->RESET_Port->BSRR = hads->RESET_Pin;
 	HAL_Delay(2U);
@@ -153,7 +153,7 @@ HAL_StatusTypeDef ADS1248_Reset_Hard(ADS1248_Handle_t *hads)
  *         - HAL_OK:    The START pulse was successfully generated.
  *         - HAL_ERROR: The START_Port pointer within the handle was NULL.
  */
-HAL_StatusTypeDef ADS1248_Trigger_Start_Pin(ADS1248_Handle_t *hads)
+HAL_StatusTypeDef ADS1248_Trigger_Start_Pin (ADS1248_Handle_t * hads)
 {
 	if(hads->START_Port == NULL)
 	{
@@ -161,7 +161,7 @@ HAL_StatusTypeDef ADS1248_Trigger_Start_Pin(ADS1248_Handle_t *hads)
 	}
 	hads->START_Port->BSRR = hads->START_Pin;
 	delay_us(1U);
-	hads->START_Port->BSRR = hads->START_Pin<<16;
+	hads->START_Port->BSRR = (hads->START_Pin << 16);
 
 	return HAL_OK;
 }
@@ -191,7 +191,7 @@ HAL_StatusTypeDef ADS1248_Trigger_Start_Pin(ADS1248_Handle_t *hads)
  *         - HAL_BUSY:    The SPI peripheral is currently locked by another process.
  *         - HAL_TIMEOUT: The SPI transaction exceeded the specified maximum delay limit (ADS1248_SPI_DELAY).
  */
-static HAL_StatusTypeDef ADS1248_WriteReg_Once(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint8_t Data)
+static HAL_StatusTypeDef ADS1248_WriteReg_Once (ADS1248_Handle_t * hads, ADS1248_Reg_t Ads1248_Reg, uint8_t Data)
 {
 	uint8_t tx[3];
 	HAL_StatusTypeDef status;
@@ -200,10 +200,10 @@ static HAL_StatusTypeDef ADS1248_WriteReg_Once(ADS1248_Handle_t *hads,ADS1248_Re
 	tx[1] = __ADS1248_CMD_W_R_REG_COUNT(1U);
 	tx[2] = Data;
 
-	hads->CS_Port->BSRR = hads->CS_Pin << 16U;
-	delay_us(1);
+	hads->CS_Port->BSRR = (hads->CS_Pin << 16U);
+	delay_us(1U);
 	status = HAL_SPI_Transmit(hads->hspi, tx, 3U, ADS1248_SPI_DELAY);
-	delay_us(3);
+	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
 
 	return status;
@@ -221,7 +221,7 @@ static HAL_StatusTypeDef ADS1248_WriteReg_Once(ADS1248_Handle_t *hads,ADS1248_Re
  * @param  hads        Pointer to the ADS1248_Handle_t structure that contains
  *                     the SPI handle and hardware pin configurations for the device.
  * @param  Ads1248_Reg The specific target register address to read (of type ADS1248_Reg_t).
- * @param  pData       Pointer to a uint8_t variable where the retrieved register
+ * @param  p_Data       Pointer to a uint8_t variable where the retrieved register
  *                     data will be stored.
  *
  * @retval HAL_StatusTypeDef HAL status of the SPI transaction:
@@ -230,7 +230,7 @@ static HAL_StatusTypeDef ADS1248_WriteReg_Once(ADS1248_Handle_t *hads,ADS1248_Re
  *         - HAL_BUSY:    The SPI peripheral is currently locked by another process.
  *         - HAL_TIMEOUT: The SPI transaction exceeded the specified maximum delay limit (ADS1248_SPI_DELAY).
  */
-HAL_StatusTypeDef ADS1248_ReadReg_Once(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint8_t *pData)
+HAL_StatusTypeDef ADS1248_ReadReg_Once (ADS1248_Handle_t * hads, ADS1248_Reg_t Ads1248_Reg, uint8_t * p_Data)
 {
 	uint8_t tx[3];
 	uint8_t rx[3];
@@ -240,17 +240,17 @@ HAL_StatusTypeDef ADS1248_ReadReg_Once(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1
 	tx[1] = __ADS1248_CMD_W_R_REG_COUNT(1U);
 	tx[2] = ADS1248_CMD_NOP;
 
-	hads->CS_Port->BSRR = hads->CS_Pin << 16U;
-	delay_us(1);
+	hads->CS_Port->BSRR = (hads->CS_Pin << 16U);
+	delay_us(1U);
 	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, 3U, ADS1248_SPI_DELAY);
-	delay_us(3);
+	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
 	if(status != HAL_OK)
 	{
 		return status;
 	}
 
-	*pData = rx[2];
+	*p_Data = rx[2];
 
 	return status;
 }
@@ -269,24 +269,24 @@ HAL_StatusTypeDef ADS1248_ReadReg_Once(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1
  *                     the SPI handle and hardware pin configurations.
  * @param  Ads1248_Reg The starting register address to read from (of type ADS1248_Reg_t).
  * @param  n           The number of consecutive registers to read.
- * @param  pData       Pointer to a uint8_t array where the retrieved register
+ * @param  p_Data       Pointer to a uint8_t array where the retrieved register
  *                     data will be stored sequentially.
  *
  * @retval HAL_StatusTypeDef HAL status of the SPI transaction:
- *         - HAL_OK:      The registers were successfully read and stored in pData.
+ *         - HAL_OK:      The registers were successfully read and stored in p_Data.
  *         - HAL_ERROR:   A NULL pointer was passed, `n` was 0 or out of bounds,
  *                        an invalid starting register was provided, or the request
  *                        would cause an address wrap-around.
  *         - HAL_BUSY:    The SPI peripheral is currently locked.
  *         - HAL_TIMEOUT: The SPI transaction exceeded the specified delay limit.
  */
-HAL_StatusTypeDef ADS1248_ReadReg_n(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint8_t n, uint8_t *pData)
+HAL_StatusTypeDef ADS1248_ReadReg_n (ADS1248_Handle_t * hads, ADS1248_Reg_t Ads1248_Reg, uint8_t n, uint8_t * p_Data)
 {
-	if(hads == NULL || pData == NULL)
+	if((hads == NULL) || (p_Data == NULL))
 	{
 		return HAL_ERROR;
 	}
-	if(n == 0 || n > 16 || Ads1248_Reg > ADS1248_REG_GPIODAT || n > (15 - Ads1248_Reg))
+	if((n == 0) || (n > 16) || (Ads1248_Reg > ADS1248_REG_GPIODAT) || (n > (15 - Ads1248_Reg)))
 	{
 		return HAL_ERROR;
 	}
@@ -297,23 +297,23 @@ HAL_StatusTypeDef ADS1248_ReadReg_n(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248
 	tx[0] = __ADS1248_CMD_RREG(Ads1248_Reg);
 	tx[1] = __ADS1248_CMD_W_R_REG_COUNT(n);
 
-	hads->CS_Port->BSRR = hads->CS_Pin << 16U;
-	delay_us(1);
+	hads->CS_Port->BSRR = (hads->CS_Pin << 16U);
+	delay_us(1U);
 
-	for(uint8_t i = 0U; i<(n+2) ; i++)
+	for(uint8_t i = 0U ; i < (n+2) ; i++)
 	{
-		tx[i+2] = ADS1248_CMD_NOP;
+		tx[i + 2] = ADS1248_CMD_NOP;
 	}
-	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, (n+2), ADS1248_SPI_DELAY);
-	delay_us(3);
+	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, (n + 2), ADS1248_SPI_DELAY);
+	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
 	if(status != HAL_OK)
 	{
 		return status;
 	}
-	for(uint8_t i = 0U; i<n ; i++)
+	for(uint8_t i = 0U ; i<n ; i++)
 	{
-		*(pData+i) = rx[i+2];
+		*(p_Data + i) = rx[i + 2];
 	}
 	return status;
 }
@@ -344,7 +344,7 @@ HAL_StatusTypeDef ADS1248_ReadReg_n(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248
  *         - HAL_BUSY:    The SPI peripheral is currently locked.
  *         - HAL_TIMEOUT: The SPI transaction exceeded the specified delay limit.
  */
-HAL_StatusTypeDef ADS1248_Command_Tx(ADS1248_Handle_t *hads, uint8_t Ads1248_Cmd)
+HAL_StatusTypeDef ADS1248_Command_Tx (ADS1248_Handle_t * hads, uint8_t Ads1248_Cmd)
 {
 	if(Ads1248_Cmd > __ADS1248_CMD_SELFOCAL)
 	{
@@ -355,10 +355,10 @@ HAL_StatusTypeDef ADS1248_Command_Tx(ADS1248_Handle_t *hads, uint8_t Ads1248_Cmd
 
 	tx = Ads1248_Cmd;
 
-	hads->CS_Port->BSRR = hads->CS_Pin << 16U;
-	delay_us(1);
-	status = HAL_SPI_Transmit(hads->hspi, &tx, 1, ADS1248_SPI_DELAY);
-	delay_us(3);
+	hads->CS_Port->BSRR = (hads->CS_Pin << 16U);
+	delay_us(1U);
+	status = HAL_SPI_Transmit(hads->hspi, &tx, 1U, ADS1248_SPI_DELAY);
+	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
 	if(status != HAL_OK)
 	{
@@ -392,7 +392,7 @@ HAL_StatusTypeDef ADS1248_Command_Tx(ADS1248_Handle_t *hads, uint8_t Ads1248_Cmd
  *         - HAL_OK:    The MUX0 register was successfully read and updated.
  *         - HAL_ERROR: An error occurred during the SPI read or write process.
  */
-HAL_StatusTypeDef ADS1248_Set_Burnout_Current(ADS1248_Handle_t *hads,ADS1248_Burnout_Current Ads1248_Bcs)
+HAL_StatusTypeDef ADS1248_Set_Burnout_Current (ADS1248_Handle_t * hads, ADS1248_Burnout_Current Ads1248_Bcs)
 {
 	uint8_t reg;
 	HAL_StatusTypeDef status;
@@ -402,7 +402,7 @@ HAL_StatusTypeDef ADS1248_Set_Burnout_Current(ADS1248_Handle_t *hads,ADS1248_Bur
 		return status;
 	}
 	reg &= __ADS1248_CLEAR_BSC;
-	reg |= Ads1248_Bcs <<__ADS1248_BSC_POS;
+	reg |= (Ads1248_Bcs <<__ADS1248_BSC_POS);
 
 	return ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX0, reg);
 }
@@ -431,22 +431,22 @@ HAL_StatusTypeDef ADS1248_Set_Burnout_Current(ADS1248_Handle_t *hads,ADS1248_Bur
  *         - HAL_ERROR: One or both of the selected channels exceeded the maximum allowed limit
  *                      (AIN7), or an error occurred during the internal SPI read/write process.
  */
-HAL_StatusTypeDef ADS1248_Set_Input_Channel(ADS1248_Handle_t *hads,Ads1248_Mux_PosInput_t Ads1248_Mux_Sp,Ads1248_Mux_NegInput_t Ads1248_Mux_Sn)
+HAL_StatusTypeDef ADS1248_Set_Input_Channel (ADS1248_Handle_t * hads, Ads1248_Mux_PosInput_t Ads1248_Mux_Sp, Ads1248_Mux_NegInput_t Ads1248_Mux_Sn)
 {
-	if(Ads1248_Mux_Sp > ADS1248_MUX_SP_AIN7 || Ads1248_Mux_Sn > ADS1248_MUX_SN_AIN7)
+	if((Ads1248_Mux_Sp > ADS1248_MUX_SP_AIN7) || (Ads1248_Mux_Sn > ADS1248_MUX_SN_AIN7))
 	{
 		return HAL_ERROR;
 	}
 	uint8_t reg;
 	HAL_StatusTypeDef status;
-	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX0,&reg);
+	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX0, &reg);
 	if(status != HAL_OK)
 	{
 		return status;
 	}
-	reg &= __ADS1248_CLEAR_MUX_SP | __ADS1248_CLEAR_MUX_NP;
+	reg &= (__ADS1248_CLEAR_MUX_SP | __ADS1248_CLEAR_MUX_NP);
 	reg |= (Ads1248_Mux_Sp << __ADS1248_MUX_SP_POS) | (Ads1248_Mux_Sn << __ADS1248_MUX_SN_POS);
-	return ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX0,reg);
+	return ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX0, reg);
 }
 /**
  * @brief  Configures the internal bias voltage (VBIAS) for specific analog input pins.
@@ -472,7 +472,7 @@ HAL_StatusTypeDef ADS1248_Set_Input_Channel(ADS1248_Handle_t *hads,Ads1248_Mux_P
  *         - HAL_ERROR: An invalid En_Di parameter was passed, or an error occurred
  *                      during the internal SPI read/write process.
  */
-HAL_StatusTypeDef ADS1248_Set_VBIAS(ADS1248_Handle_t *hads,uint8_t Ads1248_Vbias,uint8_t En_Di)
+HAL_StatusTypeDef ADS1248_Set_VBIAS (ADS1248_Handle_t * hads, uint8_t Ads1248_Vbias, uint8_t En_Di)
 {
 	if(En_Di > ENABLE)
 	{
@@ -516,7 +516,7 @@ HAL_StatusTypeDef ADS1248_Set_VBIAS(ADS1248_Handle_t *hads,uint8_t Ads1248_Vbias
  *         - HAL_OK:    The MUX1 register was successfully updated.
  *         - HAL_ERROR: An error occurred during the internal SPI read/write process.
  */
-HAL_StatusTypeDef ADS1248_Set_Vref_State(ADS1248_Handle_t *hads,ADS1248_Vref_State Ads1248_Vrefcon)
+HAL_StatusTypeDef ADS1248_Set_Vref_State (ADS1248_Handle_t * hads, ADS1248_Vref_State Ads1248_Vrefcon)
 {
 	uint8_t reg;
 	HAL_StatusTypeDef status;
@@ -527,7 +527,7 @@ HAL_StatusTypeDef ADS1248_Set_Vref_State(ADS1248_Handle_t *hads,ADS1248_Vref_Sta
 	}
 
 	reg &= __ADS1248_CLEAR_VREFCON;
-	reg |= Ads1248_Vrefcon <<__ADS1248_VREFCON_POS;
+	reg |= (Ads1248_Vrefcon <<__ADS1248_VREFCON_POS);
 
 	return ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX1, reg);
 }
@@ -552,7 +552,7 @@ HAL_StatusTypeDef ADS1248_Set_Vref_State(ADS1248_Handle_t *hads,ADS1248_Vref_Sta
  *         - HAL_OK:    The MUX1 register was successfully updated.
  *         - HAL_ERROR: An error occurred during the internal SPI read/write process.
  */
-HAL_StatusTypeDef ADS1248_Set_Vref_Source(ADS1248_Handle_t *hads,Ads1248_Reference_Src_t Ads1248_Refsel)
+HAL_StatusTypeDef ADS1248_Set_Vref_Source (ADS1248_Handle_t * hads, Ads1248_Reference_Src_t Ads1248_Refsel)
 {
 	uint8_t reg;
 	HAL_StatusTypeDef status;
@@ -562,7 +562,7 @@ HAL_StatusTypeDef ADS1248_Set_Vref_Source(ADS1248_Handle_t *hads,Ads1248_Referen
 		return status;
 	}
 	reg &= __ADS1248_CLEAR_REFSELT;
-	reg |= Ads1248_Refsel << __ADS1248_REFSELT_POS;
+	reg |= (Ads1248_Refsel << __ADS1248_REFSELT_POS);
 	return ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX1, reg);
 }
 /**
@@ -584,7 +584,7 @@ HAL_StatusTypeDef ADS1248_Set_Vref_Source(ADS1248_Handle_t *hads,Ads1248_Referen
  *         - HAL_OK:    The MUX1 register was successfully updated.
  *         - HAL_ERROR: An error occurred during the internal SPI read/write process.
  */
-HAL_StatusTypeDef ADS1248_Set_System_Monitor(ADS1248_Handle_t *hads,ADS1248_MuxCal_t Ads1248_MuxCal)
+HAL_StatusTypeDef ADS1248_Set_System_Monitor (ADS1248_Handle_t * hads, ADS1248_MuxCal_t Ads1248_MuxCal)
 {
 	uint8_t reg;
 	HAL_StatusTypeDef status;
@@ -594,7 +594,7 @@ HAL_StatusTypeDef ADS1248_Set_System_Monitor(ADS1248_Handle_t *hads,ADS1248_MuxC
 		return status;
 	}
 	reg &= __ADS1248_CLEAR_MUXCAL;
-	reg |= Ads1248_MuxCal << __ADS1248_MUXCAL_POS;
+	reg |= (Ads1248_MuxCal << __ADS1248_MUXCAL_POS);
 	return ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX1, reg);
 }
 
@@ -621,7 +621,7 @@ HAL_StatusTypeDef ADS1248_Set_System_Monitor(ADS1248_Handle_t *hads,ADS1248_MuxC
  *         - HAL_OK:    The SYS0 register was successfully updated.
  *         - HAL_ERROR: An error occurred during the internal SPI read/write process.
  */
-HAL_StatusTypeDef ADS1248_Set_PGA(ADS1248_Handle_t *hads,ADS1248_GainPga_t Ads1248_Pga)
+HAL_StatusTypeDef ADS1248_Set_PGA (ADS1248_Handle_t * hads, ADS1248_GainPga_t Ads1248_Pga)
 {
 	uint8_t reg;
 	HAL_StatusTypeDef status;
@@ -631,7 +631,7 @@ HAL_StatusTypeDef ADS1248_Set_PGA(ADS1248_Handle_t *hads,ADS1248_GainPga_t Ads12
 		return status;
 	}
 	reg &= __ADS1248_CLEAR_PGA;
-	reg |= Ads1248_Pga << __ADS1248_PGA_POS;
+	reg |= (Ads1248_Pga << __ADS1248_PGA_POS);
 	return ADS1248_WriteReg_Once(hads, ADS1248_REG_SYS0, reg);
 }
 /**
@@ -657,7 +657,7 @@ HAL_StatusTypeDef ADS1248_Set_PGA(ADS1248_Handle_t *hads,ADS1248_GainPga_t Ads12
  *         - HAL_OK:    The SYS0 register was successfully updated.
  *         - HAL_ERROR: An error occurred during the internal SPI read/write process.
  */
-HAL_StatusTypeDef ADS1248_Set_Data_Rate(ADS1248_Handle_t *hads,ADS1248_DataRate_t Ads1248_Datarate)
+HAL_StatusTypeDef ADS1248_Set_Data_Rate (ADS1248_Handle_t * hads, ADS1248_DataRate_t Ads1248_Datarate)
 {
 	uint8_t reg;
 	HAL_StatusTypeDef status;
@@ -667,7 +667,7 @@ HAL_StatusTypeDef ADS1248_Set_Data_Rate(ADS1248_Handle_t *hads,ADS1248_DataRate_
 		return status;
 	}
 	reg &= __ADS1248_CLEAR_DR;
-	reg |= Ads1248_Datarate << __ADS1248_DR_POS;
+	reg |= (Ads1248_Datarate << __ADS1248_DR_POS);
 	return ADS1248_WriteReg_Once(hads, ADS1248_REG_SYS0, reg);
 }
 /**
@@ -690,7 +690,7 @@ HAL_StatusTypeDef ADS1248_Set_Data_Rate(ADS1248_Handle_t *hads,ADS1248_DataRate_
  *         - HAL_OK:    The IDAC0 register was successfully read and updated.
  *         - HAL_ERROR: An error occurred during the internal SPI read/write process.
  */
-HAL_StatusTypeDef ADS1248_Set_Drdy_Mode(ADS1248_Handle_t *hads, Ads1248_Drdy Ads1248_Drdy_Mode)
+HAL_StatusTypeDef ADS1248_Set_Drdy_Mode (ADS1248_Handle_t * hads, Ads1248_Drdy Ads1248_Drdy_Mode)
 {
 	uint8_t reg;
 	HAL_StatusTypeDef status;
@@ -700,7 +700,7 @@ HAL_StatusTypeDef ADS1248_Set_Drdy_Mode(ADS1248_Handle_t *hads, Ads1248_Drdy Ads
 		return status;
 	}
 	reg &= __ADS1248_CLEAR_DRDY;
-	reg |= Ads1248_Drdy_Mode <<__ADS1248_DRDY_MODE_POS;
+	reg |= (Ads1248_Drdy_Mode <<__ADS1248_DRDY_MODE_POS);
 
 	return ADS1248_WriteReg_Once(hads, ADS1248_REG_IDAC0, reg);
 }
@@ -730,9 +730,9 @@ HAL_StatusTypeDef ADS1248_Set_Drdy_Mode(ADS1248_Handle_t *hads, Ads1248_Drdy Ads
  *                      exceeded the maximum limit (1500µA), or an error occurred
  *                      during the internal SPI read/write process.
  */
-HAL_StatusTypeDef ADS1248_Set_Exci_Current_Mag(ADS1248_Handle_t *hads,ADS1248_IdacMagnitude_t Ads1248_IMag)
+HAL_StatusTypeDef ADS1248_Set_Exci_Current_Mag (ADS1248_Handle_t * hads, ADS1248_IdacMagnitude_t Ads1248_IMag)
 {
-	if(Ads1248_IMag > ADS1248_IMAG_1500_UA || hads == NULL)
+	if((Ads1248_IMag > ADS1248_IMAG_1500_UA) || (hads == NULL))
 	{
 		return HAL_ERROR;
 	}
@@ -752,8 +752,8 @@ HAL_StatusTypeDef ADS1248_Set_Exci_Current_Mag(ADS1248_Handle_t *hads,ADS1248_Id
 	reg[1] &= __ADS1248_CLEAR_IMAG;
 	if(Ads1248_IMag != ADS1248_IMAG_OFF)
 	{
-		reg[0] |= ADS1248_VREFCON_INT_ALWAYS_ON << __ADS1248_VREFCON_POS;
-		reg[1] |= Ads1248_IMag << __ADS1248_IMAG_POS;
+		reg[0] |= (ADS1248_VREFCON_INT_ALWAYS_ON << __ADS1248_VREFCON_POS);
+		reg[1] |= (Ads1248_IMag << __ADS1248_IMAG_POS);
 	}
 	status = ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX1, reg[0]);
 	if(status)
@@ -790,9 +790,9 @@ HAL_StatusTypeDef ADS1248_Set_Exci_Current_Mag(ADS1248_Handle_t *hads,ADS1248_Id
  *                      was selected, or an error occurred during the internal
  *                      SPI read/write process.
  */
-HAL_StatusTypeDef ADS1248_Set_Exci_Current_Pin(ADS1248_Handle_t *hads,uint8_t Ads1248_idac,ADS1248_Exci_Pin_t Ads1248_Ex_Cur)
+HAL_StatusTypeDef ADS1248_Set_Exci_Current_Pin (ADS1248_Handle_t * hads, uint8_t Ads1248_idac, ADS1248_Exci_Pin_t Ads1248_Ex_Cur)
 {
-	if(hads == NULL || Ads1248_idac > ADS1248_IDAC_2 || Ads1248_Ex_Cur > ADS1248_EX_CUR_OUT_DISCON)
+	if((hads == NULL) || (Ads1248_idac > ADS1248_IDAC_2) || (Ads1248_Ex_Cur > ADS1248_EX_CUR_OUT_DISCON))
 	{
 		return HAL_ERROR;
 	}
@@ -840,11 +840,11 @@ HAL_StatusTypeDef ADS1248_Set_Exci_Current_Pin(ADS1248_Handle_t *hads,uint8_t Ad
  *                      the selected pin does not support GPIO functionality, or an
  *                      SPI communication error occurred.
  */
-HAL_StatusTypeDef ADS1248_Set_GPIO_Mode(ADS1248_Handle_t *hads,uint8_t Ads1248_Pin,uint8_t Ads1248_Ain_Mode)
+HAL_StatusTypeDef ADS1248_Set_GPIO_Mode (ADS1248_Handle_t * hads, uint8_t Ads1248_Pin, uint8_t Ads1248_Ain_Mode)
 {
 	HAL_StatusTypeDef status;
 	uint8_t reg;
-	if(Ads1248_Pin > ADS1248_PIN_AIN_7 || Ads1248_Ain_Mode > ADS1248_AIN_MODE_DISABLE || hads == NULL || !__IS_ADS1248_GPIO_PIN(Ads1248_Pin))
+	if((Ads1248_Pin > ADS1248_PIN_AIN_7) || (Ads1248_Ain_Mode > ADS1248_AIN_MODE_DISABLE) || (hads == NULL) || (!__IS_ADS1248_GPIO_PIN(Ads1248_Pin)))
 	{
 		return HAL_ERROR;
 	}
@@ -853,7 +853,7 @@ HAL_StatusTypeDef ADS1248_Set_GPIO_Mode(ADS1248_Handle_t *hads,uint8_t Ads1248_P
 	{
 		return status;
 	}
-	if(Ads1248_Ain_Mode == ADS1248_AIN_MODE_OUTPUT || Ads1248_Ain_Mode == ADS1248_AIN_MODE_INPUT)
+	if((Ads1248_Ain_Mode == ADS1248_AIN_MODE_OUTPUT) || (Ads1248_Ain_Mode == ADS1248_AIN_MODE_INPUT))
 	{
 		reg |= Ads1248_Pin;
 	}
@@ -927,9 +927,9 @@ HAL_StatusTypeDef ADS1248_Set_GPIO_Mode(ADS1248_Handle_t *hads,uint8_t Ads1248_P
  *                      support GPIO functionality, or an error occurred during
  *                      the internal SPI read/write process.
  */
-HAL_StatusTypeDef ADS1248_GPIO_Write(ADS1248_Handle_t *hads,uint8_t Ads1248_Pin,ADS1248_Gpio_Pin_State_t Ads1248_Gpio)
+HAL_StatusTypeDef ADS1248_GPIO_Write (ADS1248_Handle_t * hads, uint8_t Ads1248_Pin, ADS1248_Gpio_Pin_State_t Ads1248_Gpio)
 {
-	if(Ads1248_Gpio > ADS1248_GPIO_SET || !__IS_ADS1248_GPIO_PIN(Ads1248_Pin))
+	if((Ads1248_Gpio > ADS1248_GPIO_SET) || (!__IS_ADS1248_GPIO_PIN(Ads1248_Pin)))
 	{
 		return HAL_ERROR;
 	}
@@ -974,9 +974,9 @@ HAL_StatusTypeDef ADS1248_GPIO_Write(ADS1248_Handle_t *hads,uint8_t Ads1248_Pin,
  *         - 0x99:               An error occurred during the internal SPI read
  *                               process.
  */
-uint8_t ADS1248_GPIO_Read(ADS1248_Handle_t *hads,uint8_t Ads1248_Pin)
+uint8_t ADS1248_GPIO_Read(ADS1248_Handle_t * hads, uint8_t Ads1248_Pin)
 {
-	if(hads == NULL || !__IS_ADS1248_GPIO_PIN(Ads1248_Pin))
+	if((hads == NULL) || (!__IS_ADS1248_GPIO_PIN(Ads1248_Pin)))
 	{
 		return 0xFF;
 	}
@@ -1017,7 +1017,7 @@ uint8_t ADS1248_GPIO_Read(ADS1248_Handle_t *hads,uint8_t Ads1248_Pin)
  *                  Returns a safe, fallback maximum delay (0x9999) if an SPI
  *                  communication error occurs while reading the SYS0 register.
  */
-static uint32_t __ADS1248_Calc_Calib_Delay(ADS1248_Handle_t *hads)
+static uint32_t __ADS1248_Calc_Calib_Delay (ADS1248_Handle_t * hads)
 {
 	uint8_t reg;
 	HAL_StatusTypeDef status;
@@ -1063,8 +1063,8 @@ static uint32_t __ADS1248_Calc_Calib_Delay(ADS1248_Handle_t *hads)
  *          the configured LSB weight.
  *
  * @param  hads    Pointer to the ADS1248_Handle_t structure containing the SPI handle and configuration.
- * @param  pData32 Pointer to a 32-bit signed integer containing the manual offset value to subtract.
- * @param  pData   Pointer to a float variable where the final calculated voltage will be stored.
+ * @param  p_Data32 Pointer to a 32-bit signed integer containing the manual offset value to subtract.
+ * @param  p_Data   Pointer to a float variable where the final calculated voltage will be stored.
  *
  * @retval HAL_StatusTypeDef HAL status of the SPI transaction:
  *         - HAL_OK:      The data was successfully read and the voltage was calculated.
@@ -1072,16 +1072,16 @@ static uint32_t __ADS1248_Calc_Calib_Delay(ADS1248_Handle_t *hads)
  *         - HAL_BUSY:    The SPI peripheral is currently locked.
  *         - HAL_TIMEOUT: The SPI transaction exceeded the specified delay limit.
  */
-HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset(ADS1248_Handle_t *hads,int32_t *pData32,float *pData)
+HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset (ADS1248_Handle_t * hads, int32_t * p_Data32, float * p_Data)
 {
 	uint8_t tx[3] = {ADS1248_CMD_NOP,ADS1248_CMD_NOP,ADS1248_CMD_NOP};
 	uint8_t rx[3];
 	int32_t raw_data;
 	HAL_StatusTypeDef status;
-	hads->CS_Port->BSRR = hads->CS_Pin<<16;
-	delay_us(1);
-	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, 3, ADS1248_SPI_DELAY);
-	delay_us(3);
+	hads->CS_Port->BSRR = (hads->CS_Pin << 16U);
+	delay_us(1U);
+	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, 3U, ADS1248_SPI_DELAY);
+	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
 	if(status != HAL_OK)
 	{
@@ -1092,9 +1092,9 @@ HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset(ADS1248_Handle_t *hads,int32_
 	{
 		raw_data |= 0xFF000000;
 	}
-	raw_data -= (*pData32);
+	raw_data -= (*p_Data32);
 
-	*pData = (float)(raw_data * hads->Init.__voltage_lsb);
+	*p_Data = (float)(raw_data * hads->Init.__voltage_lsb);
 
 	return status;
 }
@@ -1109,7 +1109,7 @@ HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset(ADS1248_Handle_t *hads,int32_
  *          LSB weight.
  *
  * @param  hads  Pointer to the ADS1248_Handle_t structure containing the SPI handle and configuration.
- * @param  pData Pointer to a float variable where the final calculated voltage will be stored.
+ * @param  p_Data Pointer to a float variable where the final calculated voltage will be stored.
  *
  * @retval HAL_StatusTypeDef HAL status of the SPI transaction:
  *         - HAL_OK:      The data was successfully read and the voltage was calculated.
@@ -1117,28 +1117,28 @@ HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset(ADS1248_Handle_t *hads,int32_
  *         - HAL_BUSY:    The SPI peripheral is currently locked.
  *         - HAL_TIMEOUT: The SPI transaction exceeded the specified delay limit.
  */
-HAL_StatusTypeDef ADS1248_Get_Voltage_V(ADS1248_Handle_t *hads,float *pData)
+HAL_StatusTypeDef ADS1248_Get_Voltage_V (ADS1248_Handle_t * hads,float * p_Data)
 {
 	uint8_t tx[3] = {ADS1248_CMD_NOP,ADS1248_CMD_NOP,ADS1248_CMD_NOP};
 	uint8_t rx[3];
 	int32_t raw_data;
 	HAL_StatusTypeDef status;
-	hads->CS_Port->BSRR = hads->CS_Pin<<16;
-	delay_us(1);
-	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, 3, ADS1248_SPI_DELAY);
-	delay_us(3);
+	hads->CS_Port->BSRR = (hads->CS_Pin << 16);
+	delay_us(1U);
+	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, 3U, ADS1248_SPI_DELAY);
+	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
 	if(status != HAL_OK)
 	{
 		return status;
 	}
-	raw_data = (int32_t)((((uint32_t)rx[0]<<16)) | (((uint32_t)rx[1]<<8)) | (((uint32_t)rx[2]<<0)));
+	raw_data = (int32_t)(((uint32_t)rx[0] << 16U) | ((uint32_t)rx[1] << 8U) | ((uint32_t)rx[2] << 0U));
 	if(raw_data & 0x800000)
 	{
 		raw_data |= 0xFF000000;
 	}
 
-	*pData = (float)(raw_data * hads->Init.__voltage_lsb);
+	*p_Data = (float)(raw_data * hads->Init.__voltage_lsb);
 
 	return status;
 }
@@ -1167,7 +1167,7 @@ HAL_StatusTypeDef ADS1248_Get_Voltage_V(ADS1248_Handle_t *hads,float *pData)
  *         - HAL_OK:    The command was successfully transmitted and the delay completed.
  *         - HAL_ERROR: An error occurred while transmitting the calibration command.
  */
-HAL_StatusTypeDef ADS1248_Set_Self_Calib(ADS1248_Handle_t *hads)
+HAL_StatusTypeDef ADS1248_Set_Self_Calib (ADS1248_Handle_t * hads)
 {
 	HAL_StatusTypeDef status;
 	uint32_t calib_delay;
@@ -1203,7 +1203,7 @@ HAL_StatusTypeDef ADS1248_Set_Self_Calib(ADS1248_Handle_t *hads)
  *
  * @retval HAL_StatusTypeDef HAL status of the SPI transactions.
  */
-HAL_StatusTypeDef ADS1248_Set_System_Offset_Calib(ADS1248_Handle_t *hads)
+HAL_StatusTypeDef ADS1248_Set_System_Offset_Calib (ADS1248_Handle_t * hads)
 {
 	uint8_t reg;
 	HAL_StatusTypeDef status;
@@ -1214,7 +1214,7 @@ HAL_StatusTypeDef ADS1248_Set_System_Offset_Calib(ADS1248_Handle_t *hads)
 	{
 		return status;
 	}
-	status = ADS1248_Set_VBIAS(hads, (1U<<(reg & (0x07U))), ENABLE);
+	status = ADS1248_Set_VBIAS(hads, (1U << (reg & (0x07U))), ENABLE);
 	if(status != HAL_OK)
 	{
 		return status;
@@ -1230,7 +1230,7 @@ HAL_StatusTypeDef ADS1248_Set_System_Offset_Calib(ADS1248_Handle_t *hads)
 
 	status =  ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX1, reg);
 
-	return ADS1248_Set_VBIAS(hads, (1U<<(reg & (0x07U))), ENABLE);
+	return ADS1248_Set_VBIAS(hads, (1U << (reg & (0x07U))), ENABLE);
 }
 /**
  * @brief  Initiates a system gain calibration (SYSGCAL) on the ADS1248.
@@ -1248,21 +1248,18 @@ HAL_StatusTypeDef ADS1248_Set_System_Offset_Calib(ADS1248_Handle_t *hads)
  *
  * @retval HAL_StatusTypeDef HAL status of the SPI transactions.
  */
-HAL_StatusTypeDef ADS1248_Set_Gain_Calib(ADS1248_Handle_t *hads)
+HAL_StatusTypeDef ADS1248_Set_Gain_Calib (ADS1248_Handle_t * hads)
 {
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	uint32_t calib_delay;
-
-
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX1, &reg);
 	if(status != HAL_OK)
 	{
 		return status;
 	}
-
 	reg &= __ADS1248_CLEAR_MUXCAL;
-	reg |= ADS1248_MUXCAL_GAIN_CALIB << __ADS1248_MUXCAL_POS;
+	reg |= (ADS1248_MUXCAL_GAIN_CALIB << __ADS1248_MUXCAL_POS);
 	status = ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX1, reg);
 	if(status != HAL_OK)
 	{
@@ -1278,7 +1275,7 @@ HAL_StatusTypeDef ADS1248_Set_Gain_Calib(ADS1248_Handle_t *hads)
 	}
 	HAL_Delay(calib_delay);
 	reg &= __ADS1248_CLEAR_MUXCAL;
-	reg |= ADS1248_MUXCAL_NORMAL<< __ADS1248_MUXCAL_POS;
+	reg |= (ADS1248_MUXCAL_NORMAL<< __ADS1248_MUXCAL_POS);
 
 	return ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX1, reg);
 }
@@ -1292,18 +1289,18 @@ HAL_StatusTypeDef ADS1248_Set_Gain_Calib(ADS1248_Handle_t *hads)
  *          offset correction[cite: 3].
  *
  * @param  hads    Pointer to the ADS1248_Handle_t structure containing the SPI handle.
- * @param  pData32 Pointer to a 32-bit unsigned integer containing the 24-bit offset value.
+ * @param  p_Data32 Pointer to a 32-bit unsigned integer containing the 24-bit offset value.
  *
  * @retval HAL_StatusTypeDef HAL status of the SPI transaction, or HAL_ERROR if
  *                           the provided value exceeds the 24-bit maximum (0xFFFFFF).
  */
-HAL_StatusTypeDef ADS1248_Set_Offset_Calib(ADS1248_Handle_t *hads, uint32_t *pData32)
+HAL_StatusTypeDef ADS1248_Set_Offset_Calib (ADS1248_Handle_t * hads, uint32_t * p_Data32)
 {
-	if(*pData32 > 0xFFFFFF)
+	if(*p_Data32 > 0xFFFFFF)
 	{
 		return HAL_ERROR;
 	}
-	return ADS1248_WriteReg_3(hads, ADS1248_REG_OFC0,pData32);
+	return ADS1248_WriteReg_3(hads, ADS1248_REG_OFC0, p_Data32);
 }
 /**
  * @brief  Manually sets the Full-Scale Calibration (FSC) register value.
@@ -1314,18 +1311,18 @@ HAL_StatusTypeDef ADS1248_Set_Offset_Calib(ADS1248_Handle_t *hads, uint32_t *pDa
  *          if your application specifically requires it[cite: 3].
  *
  * @param  hads    Pointer to the ADS1248_Handle_t structure containing the SPI handle.
- * @param  pData32 Pointer to a 32-bit unsigned integer containing the 24-bit full-scale value.
+ * @param  p_Data32 Pointer to a 32-bit unsigned integer containing the 24-bit full-scale value.
  *
  * @retval HAL_StatusTypeDef HAL status of the SPI transaction, or HAL_ERROR if
  *                           the provided value exceeds the 24-bit maximum (0xFFFFFF).
  */
-HAL_StatusTypeDef ADS1248_Set_FullScale_Calib(ADS1248_Handle_t *hads, uint32_t *pData32)
+HAL_StatusTypeDef ADS1248_Set_FullScale_Calib (ADS1248_Handle_t * hads, uint32_t * p_Data32)
 {
-	if(*pData32 > 0xFFFFFF)
+	if(*p_Data32 > 0xFFFFFF)
 	{
 		return HAL_ERROR;
 	}
-	return ADS1248_WriteReg_3(hads, ADS1248_REG_FSC0,pData32);
+	return ADS1248_WriteReg_3(hads, ADS1248_REG_FSC0, p_Data32);
 }
 /**
  * @brief  Writes a 24-bit (3-byte) data value to a specific ADS1248 register.
@@ -1337,25 +1334,25 @@ HAL_StatusTypeDef ADS1248_Set_FullScale_Calib(ADS1248_Handle_t *hads, uint32_t *
  *
  * @param  hads        Pointer to the ADS1248_Handle_t structure containing the SPI handle.
  * @param  Ads1248_Reg The target base register address (e.g., ADS1248_REG_OFC0).
- * @param  pData32     Pointer to the 32-bit variable containing the 24-bit payload.
+ * @param  p_Data32     Pointer to the 32-bit variable containing the 24-bit payload.
  *
  * @retval HAL_StatusTypeDef HAL status of the SPI transaction.
  */
-static HAL_StatusTypeDef ADS1248_WriteReg_3(ADS1248_Handle_t *hads,ADS1248_Reg_t Ads1248_Reg,uint32_t *pData32)
+static HAL_StatusTypeDef ADS1248_WriteReg_3 (ADS1248_Handle_t * hads, ADS1248_Reg_t Ads1248_Reg, uint32_t * p_Data32)
 {
 	uint8_t tx[5];
 	HAL_StatusTypeDef status;
 
 	tx[0] = __ADS1248_CMD_WREG(Ads1248_Reg);
 	tx[1] = __ADS1248_CMD_W_R_REG_COUNT(3U);
-	tx[2] = (uint8_t)(*pData32>>16);
-	tx[3] = (uint8_t)(*pData32>>8);
-	tx[4] = (uint8_t)(*pData32);
+	tx[2] = (uint8_t)(*p_Data32>>16);
+	tx[3] = (uint8_t)(*p_Data32>>8);
+	tx[4] = (uint8_t)(*p_Data32);
 
-	hads->CS_Port->BSRR = hads->CS_Pin << 16U;
-	delay_us(1);
+	hads->CS_Port->BSRR = (hads->CS_Pin << 16U);
+	delay_us(1U);
 	status = HAL_SPI_Transmit(hads->hspi, tx, 5U, ADS1248_SPI_DELAY);
-	delay_us(3);
+	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
 	if(status != HAL_OK)
 	{
@@ -1381,7 +1378,7 @@ static HAL_StatusTypeDef ADS1248_WriteReg_3(ADS1248_Handle_t *hads,ADS1248_Reg_t
  *         - 1 :  An external clock is being used.
  *         - 0x99: An SPI communication error occurred while reading the MUX1 register.
  */
-uint8_t ADS1248_Get_Clock_Status(ADS1248_Handle_t *hads)
+uint8_t ADS1248_Get_Clock_Status (ADS1248_Handle_t * hads)
 {
 	uint8_t reg;
 	HAL_StatusTypeDef status;
@@ -1390,7 +1387,7 @@ uint8_t ADS1248_Get_Clock_Status(ADS1248_Handle_t *hads)
 	{
 		return 0x99;
 	}
-	return (reg & (__ADS1248_CLCKSTAT_MASK));
+	return (reg & __ADS1248_CLCKSTAT_MASK);
 }
 /**
  * @brief  Reads the 24-bit ADC conversion result from the internal temperature sensor and converts it to Celsius.
@@ -1405,7 +1402,7 @@ uint8_t ADS1248_Get_Clock_Status(ADS1248_Handle_t *hads)
  *          the device configuration.
  *
  * @param  hads  Pointer to the ADS1248_Handle_t structure containing the SPI handle and hardware configurations.
- * @param  pData Pointer to a float variable where the final calculated temperature will be stored.
+ * @param  p_Data Pointer to a float variable where the final calculated temperature will be stored.
  *
  * @retval HAL_StatusTypeDef HAL status of the SPI transaction:
  *         - HAL_OK:      The data was successfully read and the temperature was calculated.
@@ -1413,28 +1410,28 @@ uint8_t ADS1248_Get_Clock_Status(ADS1248_Handle_t *hads)
  *         - HAL_BUSY:    The SPI peripheral is currently locked.
  *         - HAL_TIMEOUT: The SPI transaction exceeded the specified delay limit.
  */
-HAL_StatusTypeDef ADS1248_Get_Temp_C(ADS1248_Handle_t *hads,float *pData)
+HAL_StatusTypeDef ADS1248_Get_Temp_C (ADS1248_Handle_t * hads, float * p_Data)
 {
 	uint8_t tx[3] = {ADS1248_CMD_NOP,ADS1248_CMD_NOP,ADS1248_CMD_NOP};
 	uint8_t rx[3];
 	int32_t raw_data;
 	HAL_StatusTypeDef status;
-	hads->CS_Port->BSRR = hads->CS_Pin<<16;
-	delay_us(1);
-	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, 3, ADS1248_SPI_DELAY);
-	delay_us(3);
+	hads->CS_Port->BSRR = (hads->CS_Pin << 16);
+	delay_us(1U);
+	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, 3U, ADS1248_SPI_DELAY);
+	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
 	if(status != HAL_OK)
 	{
 		return status;
 	}
-	raw_data = (int32_t)((((uint32_t)rx[0]<<16)) | (((uint32_t)rx[1]<<8)) | (((uint32_t)rx[2]<<0)));
+	raw_data = (int32_t)(((uint32_t)rx[0] << 16U) | ((uint32_t)rx[1] << 8U) | ((uint32_t)rx[2] << 0U));
 	if(raw_data & 0x800000)
 	{
 		raw_data |= 0xFF000000;
 	}
 
-	*pData = (float)__ADS1248_TEMP_LSB(raw_data);
+	*p_Data = (float)__ADS1248_TEMP_LSB(raw_data);
 
 	return status;
 }
