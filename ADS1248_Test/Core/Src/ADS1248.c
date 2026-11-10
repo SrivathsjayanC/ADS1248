@@ -56,14 +56,14 @@ void ADS1248_Init (ADS1248_Handle_t * hads)
  */
 HAL_StatusTypeDef ADS1248_Set_Vltg_Calc_LSB (ADS1248_Handle_t * hads, float ads1248_vref_vltg)
 {
-	if((hads == NULL) || (ads1248_vref_vltg < 0.5f) || (ads1248_vref_vltg > 4.25f))
+	if ((hads == NULL) || (ads1248_vref_vltg < 0.5f) || (ads1248_vref_vltg > 4.25f))
 	{
 		return HAL_ERROR;
 	}
 	HAL_StatusTypeDef status;
 	uint8_t reg;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_SYS0, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -123,7 +123,7 @@ HAL_StatusTypeDef ADS1248_Set_Vltg_Calc_LSB (ADS1248_Handle_t * hads, float ads1
  */
 HAL_StatusTypeDef ADS1248_Reset_Hard (ADS1248_Handle_t * hads)
 {
-	if(hads->RESET_Port == NULL)
+	if (hads->RESET_Port == NULL)
 	{
 		return HAL_ERROR;
 	}
@@ -155,7 +155,7 @@ HAL_StatusTypeDef ADS1248_Reset_Hard (ADS1248_Handle_t * hads)
  */
 HAL_StatusTypeDef ADS1248_Trigger_Start_Pin (ADS1248_Handle_t * hads)
 {
-	if(hads->START_Port == NULL)
+	if (hads->START_Port == NULL)
 	{
 		return HAL_ERROR;
 	}
@@ -245,7 +245,7 @@ HAL_StatusTypeDef ADS1248_ReadReg_Once (ADS1248_Handle_t * hads, ADS1248_Reg_t A
 	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, 3U, ADS1248_SPI_DELAY);
 	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -282,11 +282,11 @@ HAL_StatusTypeDef ADS1248_ReadReg_Once (ADS1248_Handle_t * hads, ADS1248_Reg_t A
  */
 HAL_StatusTypeDef ADS1248_ReadReg_n (ADS1248_Handle_t * hads, ADS1248_Reg_t Ads1248_Reg, uint8_t n, uint8_t * p_Data)
 {
-	if((hads == NULL) || (p_Data == NULL))
+	if ((hads == NULL) || (p_Data == NULL))
 	{
 		return HAL_ERROR;
 	}
-	if((n == 0) || (n > 16) || (Ads1248_Reg > ADS1248_REG_GPIODAT) || (n > (15 - Ads1248_Reg)))
+	if ((n == 0) || (n > 16) || (Ads1248_Reg > ADS1248_REG_GPIODAT) || (n > (15 - Ads1248_Reg)))
 	{
 		return HAL_ERROR;
 	}
@@ -307,7 +307,7 @@ HAL_StatusTypeDef ADS1248_ReadReg_n (ADS1248_Handle_t * hads, ADS1248_Reg_t Ads1
 	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, (n + 2), ADS1248_SPI_DELAY);
 	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -346,7 +346,7 @@ HAL_StatusTypeDef ADS1248_ReadReg_n (ADS1248_Handle_t * hads, ADS1248_Reg_t Ads1
  */
 HAL_StatusTypeDef ADS1248_Command_Tx (ADS1248_Handle_t * hads, uint8_t Ads1248_Cmd)
 {
-	if(Ads1248_Cmd > __ADS1248_CMD_SELFOCAL)
+	if (Ads1248_Cmd > __ADS1248_CMD_SELFOCAL)
 	{
 		return HAL_ERROR;
 	}
@@ -360,7 +360,7 @@ HAL_StatusTypeDef ADS1248_Command_Tx (ADS1248_Handle_t * hads, uint8_t Ads1248_C
 	status = HAL_SPI_Transmit(hads->hspi, &tx, 1U, ADS1248_SPI_DELAY);
 	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -397,7 +397,7 @@ HAL_StatusTypeDef ADS1248_Set_Burnout_Current (ADS1248_Handle_t * hads, ADS1248_
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX0, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -433,14 +433,14 @@ HAL_StatusTypeDef ADS1248_Set_Burnout_Current (ADS1248_Handle_t * hads, ADS1248_
  */
 HAL_StatusTypeDef ADS1248_Set_Input_Channel (ADS1248_Handle_t * hads, Ads1248_Mux_PosInput_t Ads1248_Mux_Sp, Ads1248_Mux_NegInput_t Ads1248_Mux_Sn)
 {
-	if((Ads1248_Mux_Sp > ADS1248_MUX_SP_AIN7) || (Ads1248_Mux_Sn > ADS1248_MUX_SN_AIN7))
+	if ((Ads1248_Mux_Sp > ADS1248_MUX_SP_AIN7) || (Ads1248_Mux_Sn > ADS1248_MUX_SN_AIN7))
 	{
 		return HAL_ERROR;
 	}
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX0, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -474,22 +474,22 @@ HAL_StatusTypeDef ADS1248_Set_Input_Channel (ADS1248_Handle_t * hads, Ads1248_Mu
  */
 HAL_StatusTypeDef ADS1248_Set_VBIAS (ADS1248_Handle_t * hads, uint8_t Ads1248_Vbias, uint8_t En_Di)
 {
-	if(En_Di > ENABLE)
+	if (En_Di > ENABLE)
 	{
 		return HAL_ERROR;
 	}
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_VBIAS,&reg);
-	if(status!=HAL_OK)
+	if (status!=HAL_OK)
 	{
 		return status;
 	}
-	if(En_Di == ENABLE)
+	if (En_Di == ENABLE)
 	{
 		reg |= Ads1248_Vbias;
 	}
-	else if(En_Di == DISABLE)
+	else if (En_Di == DISABLE)
 	{
 		reg &= ~(Ads1248_Vbias);
 	}
@@ -521,7 +521,7 @@ HAL_StatusTypeDef ADS1248_Set_Vref_State (ADS1248_Handle_t * hads, ADS1248_Vref_
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX1, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -557,7 +557,7 @@ HAL_StatusTypeDef ADS1248_Set_Vref_Source (ADS1248_Handle_t * hads, Ads1248_Refe
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX1, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -589,7 +589,7 @@ HAL_StatusTypeDef ADS1248_Set_System_Monitor (ADS1248_Handle_t * hads, ADS1248_M
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX1, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -626,7 +626,7 @@ HAL_StatusTypeDef ADS1248_Set_PGA (ADS1248_Handle_t * hads, ADS1248_GainPga_t Ad
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_SYS0, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -662,7 +662,7 @@ HAL_StatusTypeDef ADS1248_Set_Data_Rate (ADS1248_Handle_t * hads, ADS1248_DataRa
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_SYS0, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -695,7 +695,7 @@ HAL_StatusTypeDef ADS1248_Set_Drdy_Mode (ADS1248_Handle_t * hads, Ads1248_Drdy A
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_IDAC0, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -732,31 +732,31 @@ HAL_StatusTypeDef ADS1248_Set_Drdy_Mode (ADS1248_Handle_t * hads, Ads1248_Drdy A
  */
 HAL_StatusTypeDef ADS1248_Set_Exci_Current_Mag (ADS1248_Handle_t * hads, ADS1248_IdacMagnitude_t Ads1248_IMag)
 {
-	if((Ads1248_IMag > ADS1248_IMAG_1500_UA) || (hads == NULL))
+	if ((Ads1248_IMag > ADS1248_IMAG_1500_UA) || (hads == NULL))
 	{
 		return HAL_ERROR;
 	}
 	uint8_t reg[2];
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX1, &reg[0]);
-	if(status)
+	if (status)
 	{
 		return status;
 	}
 	reg[0] &= __ADS1248_CLEAR_VREFCON;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_IDAC0, &reg[1]);
-	if(status)
+	if (status)
 	{
 		return status;
 	}
 	reg[1] &= __ADS1248_CLEAR_IMAG;
-	if(Ads1248_IMag != ADS1248_IMAG_OFF)
+	if (Ads1248_IMag != ADS1248_IMAG_OFF)
 	{
 		reg[0] |= (ADS1248_VREFCON_INT_ALWAYS_ON << __ADS1248_VREFCON_POS);
 		reg[1] |= (Ads1248_IMag << __ADS1248_IMAG_POS);
 	}
 	status = ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX1, reg[0]);
-	if(status)
+	if (status)
 	{
 		return status;
 	}
@@ -792,23 +792,23 @@ HAL_StatusTypeDef ADS1248_Set_Exci_Current_Mag (ADS1248_Handle_t * hads, ADS1248
  */
 HAL_StatusTypeDef ADS1248_Set_Exci_Current_Pin (ADS1248_Handle_t * hads, uint8_t Ads1248_idac, ADS1248_Exci_Pin_t Ads1248_Ex_Cur)
 {
-	if((hads == NULL) || (Ads1248_idac > ADS1248_IDAC_2) || (Ads1248_Ex_Cur > ADS1248_EX_CUR_OUT_DISCON))
+	if ((hads == NULL) || (Ads1248_idac > ADS1248_IDAC_2) || (Ads1248_Ex_Cur > ADS1248_EX_CUR_OUT_DISCON))
 	{
 		return HAL_ERROR;
 	}
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_IDAC1,&reg);
-	if(status)
+	if (status)
 	{
 		return status;
 	}
-	if(Ads1248_idac == ADS1248_IDAC_1)
+	if (Ads1248_idac == ADS1248_IDAC_1)
 	{
 		reg &= __ADS1248_CLEAR_I1DIR;
 		reg |= (Ads1248_Ex_Cur << __ADS1248_I1DIR_POS);
 	}
-	else if(Ads1248_idac == ADS1248_IDAC_2)
+	else if (Ads1248_idac == ADS1248_IDAC_2)
 	{
 		reg &= __ADS1248_CLEAR_I2DIR;
 		reg |= (Ads1248_Ex_Cur << __ADS1248_I2DIR_POS);
@@ -844,16 +844,16 @@ HAL_StatusTypeDef ADS1248_Set_GPIO_Mode (ADS1248_Handle_t * hads, uint8_t Ads124
 {
 	HAL_StatusTypeDef status;
 	uint8_t reg;
-	if((Ads1248_Pin > ADS1248_PIN_AIN_7) || (Ads1248_Ain_Mode > ADS1248_AIN_MODE_DISABLE) || (hads == NULL) || (!__IS_ADS1248_GPIO_PIN(Ads1248_Pin)))
+	if ((Ads1248_Pin > ADS1248_PIN_AIN_7) || (Ads1248_Ain_Mode > ADS1248_AIN_MODE_DISABLE) || (hads == NULL) || (!__IS_ADS1248_GPIO_PIN(Ads1248_Pin)))
 	{
 		return HAL_ERROR;
 	}
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_GPIOCFG, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
-	if((Ads1248_Ain_Mode == ADS1248_AIN_MODE_OUTPUT) || (Ads1248_Ain_Mode == ADS1248_AIN_MODE_INPUT))
+	if ((Ads1248_Ain_Mode == ADS1248_AIN_MODE_OUTPUT) || (Ads1248_Ain_Mode == ADS1248_AIN_MODE_INPUT))
 	{
 		reg |= Ads1248_Pin;
 	}
@@ -862,40 +862,40 @@ HAL_StatusTypeDef ADS1248_Set_GPIO_Mode (ADS1248_Handle_t * hads, uint8_t Ads124
 		reg &= ~(Ads1248_Pin);
 	}
 	status = ADS1248_WriteReg_Once(hads, ADS1248_REG_GPIOCFG, reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
 	//also clears the GPIODAT reg for that pin
-	if(Ads1248_Ain_Mode == ADS1248_AIN_MODE_DISABLE)
+	if (Ads1248_Ain_Mode == ADS1248_AIN_MODE_DISABLE)
 	{
 		status = ADS1248_ReadReg_Once(hads, ADS1248_REG_GPIODAT, &reg);
-		if(status != HAL_OK)
+		if (status != HAL_OK)
 		{
 			return status;
 		}
 		reg &= ~(Ads1248_Pin);
 		status = ADS1248_WriteReg_Once(hads, ADS1248_REG_GPIODAT, reg);
-		if(status != HAL_OK)
+		if (status != HAL_OK)
 		{
 			return status;
 		}
 	}
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_GPIODIR, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
-	if(Ads1248_Ain_Mode == ADS1248_AIN_MODE_OUTPUT)
+	if (Ads1248_Ain_Mode == ADS1248_AIN_MODE_OUTPUT)
 	{
 		reg &= ~(Ads1248_Pin);
 	}
-	else if(Ads1248_Ain_Mode == ADS1248_AIN_MODE_INPUT)
+	else if (Ads1248_Ain_Mode == ADS1248_AIN_MODE_INPUT)
 	{
 		reg |= Ads1248_Pin;
 	}
 	status = ADS1248_WriteReg_Once(hads, ADS1248_REG_GPIODIR, reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -929,19 +929,19 @@ HAL_StatusTypeDef ADS1248_Set_GPIO_Mode (ADS1248_Handle_t * hads, uint8_t Ads124
  */
 HAL_StatusTypeDef ADS1248_GPIO_Write (ADS1248_Handle_t * hads, uint8_t Ads1248_Pin, ADS1248_Gpio_Pin_State_t Ads1248_Gpio)
 {
-	if((Ads1248_Gpio > ADS1248_GPIO_SET) || (!__IS_ADS1248_GPIO_PIN(Ads1248_Pin)))
+	if ((Ads1248_Gpio > ADS1248_GPIO_SET) || (!__IS_ADS1248_GPIO_PIN(Ads1248_Pin)))
 	{
 		return HAL_ERROR;
 	}
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_GPIODAT, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
 	reg &= ~Ads1248_Pin;
-	if(Ads1248_Gpio == ADS1248_GPIO_SET)
+	if (Ads1248_Gpio == ADS1248_GPIO_SET)
 	{
 		reg |= Ads1248_Pin;
 	}
@@ -976,7 +976,7 @@ HAL_StatusTypeDef ADS1248_GPIO_Write (ADS1248_Handle_t * hads, uint8_t Ads1248_P
  */
 uint8_t ADS1248_GPIO_Read(ADS1248_Handle_t * hads, uint8_t Ads1248_Pin)
 {
-	if((hads == NULL) || (!__IS_ADS1248_GPIO_PIN(Ads1248_Pin)))
+	if ((hads == NULL) || (!__IS_ADS1248_GPIO_PIN(Ads1248_Pin)))
 	{
 		return 0xFF;
 	}
@@ -984,11 +984,11 @@ uint8_t ADS1248_GPIO_Read(ADS1248_Handle_t * hads, uint8_t Ads1248_Pin)
 	HAL_StatusTypeDef status;
 	ADS1248_Gpio_Pin_State_t pin_status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_GPIODAT, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return 0x99;
 	}
-	if((reg & Ads1248_Pin) == ADS1248_GPIO_SET)
+	if ((reg & Ads1248_Pin) == ADS1248_GPIO_SET)
 	{
 		pin_status = ADS1248_GPIO_SET;
 	}
@@ -1022,7 +1022,7 @@ static uint32_t __ADS1248_Calc_Calib_Delay (ADS1248_Handle_t * hads)
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_SYS0, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return 0X9999;
 	}
@@ -1083,12 +1083,12 @@ HAL_StatusTypeDef ADS1248_Get_Voltage_V_Man_Offset (ADS1248_Handle_t * hads, int
 	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, 3U, ADS1248_SPI_DELAY);
 	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
 	raw_data = (int32_t)(((uint32_t)(rx[0]<<16)) | ((uint32_t)(rx[1]<<8)) | ((uint32_t)(rx[2]<<0)));
-	if(raw_data & 0x800000)
+	if (raw_data & 0x800000)
 	{
 		raw_data |= 0xFF000000;
 	}
@@ -1128,12 +1128,12 @@ HAL_StatusTypeDef ADS1248_Get_Voltage_V (ADS1248_Handle_t * hads,float * p_Data)
 	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, 3U, ADS1248_SPI_DELAY);
 	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
 	raw_data = (int32_t)(((uint32_t)rx[0] << 16U) | ((uint32_t)rx[1] << 8U) | ((uint32_t)rx[2] << 0U));
-	if(raw_data & 0x800000)
+	if (raw_data & 0x800000)
 	{
 		raw_data |= 0xFF000000;
 	}
@@ -1172,7 +1172,7 @@ HAL_StatusTypeDef ADS1248_Set_Self_Calib (ADS1248_Handle_t * hads)
 	HAL_StatusTypeDef status;
 	uint32_t calib_delay;
 	status = ADS1248_Command_Tx(hads, __ADS1248_CMD_SELFOCAL);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -1210,17 +1210,17 @@ HAL_StatusTypeDef ADS1248_Set_System_Offset_Calib (ADS1248_Handle_t * hads)
 	uint32_t calib_delay;
 	calib_delay = __ADS1248_Calc_Calib_Delay(hads);
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX0, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
 	status = ADS1248_Set_VBIAS(hads, (1U << (reg & (0x07U))), ENABLE);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
 	status = ADS1248_Command_Tx(hads, __ADS1248_CMD_SYSOCAL);
-	if(status)
+	if (status)
 	{
 		return status;
 	}
@@ -1254,14 +1254,14 @@ HAL_StatusTypeDef ADS1248_Set_Gain_Calib (ADS1248_Handle_t * hads)
 	HAL_StatusTypeDef status;
 	uint32_t calib_delay;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX1, &reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
 	reg &= __ADS1248_CLEAR_MUXCAL;
 	reg |= (ADS1248_MUXCAL_GAIN_CALIB << __ADS1248_MUXCAL_POS);
 	status = ADS1248_WriteReg_Once(hads, ADS1248_REG_MUX1, reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -1269,7 +1269,7 @@ HAL_StatusTypeDef ADS1248_Set_Gain_Calib (ADS1248_Handle_t * hads)
 	calib_delay = __ADS1248_Calc_Calib_Delay(hads);
 
 	status = ADS1248_Command_Tx(hads, __ADS1248_CMD_SYSGCAL);
-	if(status)
+	if (status)
 	{
 		return status;
 	}
@@ -1296,7 +1296,7 @@ HAL_StatusTypeDef ADS1248_Set_Gain_Calib (ADS1248_Handle_t * hads)
  */
 HAL_StatusTypeDef ADS1248_Set_Offset_Calib (ADS1248_Handle_t * hads, uint32_t * p_Data32)
 {
-	if(*p_Data32 > 0xFFFFFF)
+	if (*p_Data32 > 0xFFFFFF)
 	{
 		return HAL_ERROR;
 	}
@@ -1318,7 +1318,7 @@ HAL_StatusTypeDef ADS1248_Set_Offset_Calib (ADS1248_Handle_t * hads, uint32_t * 
  */
 HAL_StatusTypeDef ADS1248_Set_FullScale_Calib (ADS1248_Handle_t * hads, uint32_t * p_Data32)
 {
-	if(*p_Data32 > 0xFFFFFF)
+	if (*p_Data32 > 0xFFFFFF)
 	{
 		return HAL_ERROR;
 	}
@@ -1354,7 +1354,7 @@ static HAL_StatusTypeDef ADS1248_WriteReg_3 (ADS1248_Handle_t * hads, ADS1248_Re
 	status = HAL_SPI_Transmit(hads->hspi, tx, 5U, ADS1248_SPI_DELAY);
 	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
@@ -1383,7 +1383,7 @@ uint8_t ADS1248_Get_Clock_Status (ADS1248_Handle_t * hads)
 	uint8_t reg;
 	HAL_StatusTypeDef status;
 	status = ADS1248_ReadReg_Once(hads, ADS1248_REG_MUX1,&reg);
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return 0x99;
 	}
@@ -1421,12 +1421,12 @@ HAL_StatusTypeDef ADS1248_Get_Temp_C (ADS1248_Handle_t * hads, float * p_Data)
 	status = HAL_SPI_TransmitReceive(hads->hspi, tx, rx, 3U, ADS1248_SPI_DELAY);
 	delay_us(3U);
 	hads->CS_Port->BSRR = hads->CS_Pin;
-	if(status != HAL_OK)
+	if (status != HAL_OK)
 	{
 		return status;
 	}
 	raw_data = (int32_t)(((uint32_t)rx[0] << 16U) | ((uint32_t)rx[1] << 8U) | ((uint32_t)rx[2] << 0U));
-	if(raw_data & 0x800000)
+	if (raw_data & 0x800000)
 	{
 		raw_data |= 0xFF000000;
 	}
